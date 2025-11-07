@@ -174,9 +174,13 @@
     set(k,v){ const o=this.g(); o[k]=v; this.s(o); },
     get(k,d=null){ const o=this.g(); return k in o? o[k]:d; }
   };
-  const uid = Store.get('uid') || (Math.random().toString(36).slice(2)+Date.now().toString(36));
-  Store.set('uid', uid);
 
+  /* ✅ 항상 새로운 사용자 세션을 생성하도록 변경 */
+  const uid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  Store.set('uid', uid); // 항상 새로 생성
+  Store.set('email', null);
+  Store.set('role', null);
+  
   /* 존 & 근접판정(500m 대체) */
   const ZONES=["ENG","LIB","BAEK","SCI","MED","DORM","MAIN","LAW","ECO","MUSE"];
   const ADJ={ ENG:["LIB","SCI","MAIN"], LIB:["ENG","BAEK","MAIN"], BAEK:["LIB","MAIN"], SCI:["ENG","MED"], MED:["SCI"], DORM:["MAIN"], MAIN:["ENG","LIB","BAEK","DORM","LAW","ECO"], LAW:["MAIN"], ECO:["MAIN"], MUSE:["MAIN"] };
