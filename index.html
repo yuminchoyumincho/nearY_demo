@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>nearY — 실시간 데모 (로그인 → 역할별 단일화면)</title>
+<title>nearY</title>
 <style>
   :root{ --navy:#183857; --bg:#f6f8fb; --card:#fff; --sub:#64748b; --pill:#e9eff7; }
   *{ box-sizing:border-box; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, 'Apple SD Gothic Neo', sans-serif }
@@ -12,30 +12,27 @@
   header h1{ font-size:16px; margin:0; font-weight:800 }
   .container{ padding:16px; max-width:960px; margin:0 auto }
   .card{ background:var(--card); border-radius:14px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:14px }
-  label{ display:block; font-size:12px; color:var(--sub); margin:10px 0 6px }
+  label{ display:block; font-size:12px; color:#64748b; margin:10px 0 6px }
   input[type=text], select, textarea{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff }
   textarea{ min-height:84px }
   .row{ display:flex; gap:12px; flex-wrap:wrap }
   .row>div{ flex:1; min-width:200px }
   .btn{ display:inline-flex; justify-content:center; align-items:center; min-width:140px; padding:12px 16px; border-radius:12px; background:var(--navy); color:#fff; border:none; font-weight:800; cursor:pointer }
-  .btn.secondary{ background:#fff; color:var(--navy); border:1px solid #d1d5db }
+  .btn.secondary{ background:#fff; color:#183857; border:1px solid #d1d5db }
   .btn.small{ min-width:auto; padding:8px 10px; font-weight:700 }
   .muted{ color:#64748b; font-size:13px }
   .space{ height:10px }
   .list{ display:grid; gap:10px }
   .item{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px }
-  .pill{ display:inline-block; padding:6px 10px; border-radius:999px; background:var(--pill); color:#183857; font-size:12px }
+  .pill{ display:inline-block; padding:6px 10px; border-radius:999px; background:#e9eff7; color:#183857; font-size:12px }
   .tiny{ font-size:12px }
   .warning{ background:#fff7ed; color:#9a3412; border:1px solid #fcd34d; padding:10px; border-radius:8px }
   .ok{ background:#ecfdf5; color:#065f46; border:1px solid #34d399; padding:10px; border-radius:8px }
+  .error{ color:#b91c1c; font-size:12px; margin-top:6px }
   .hidden{ display:none !important }
 </style>
 </head>
 <body>
-<header>
-  <h1>nearY — 실시간 데모</h1>
-  <div class="tiny">로그인 → 프로필 → 역할 → 단일화면 / Firestore 실시간</div>
-</header>
 
 <div class="container">
 
@@ -131,23 +128,23 @@
     <div class="space"></div>
     <h4>도착한 요청 (같은/인접 존만 표시)</h4>
     <div id="h_inbox" class="list tiny muted">대기 중…</div>
+    <div id="h_err" class="error"></div>
 
     <div class="space"></div>
     <h4>현재 여정 상태</h4>
     <div id="h_tripState" class="tiny muted">-</div>
   </section>
-
-  <section class="card tiny muted">
-    <b>Self-XSS 주의:</b> 이 코드를 콘솔에 붙여넣지 말고, 파일로 저장해 URL로 여세요.
-  </section>
 </div>
 
-<!-- Firebase: CDN 모듈 사용 (npm import 아님) -->
+<!-- Firebase: CDN 모듈 사용 -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, doc, onSnapshot, query, orderBy, where, updateDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  import {
+    getFirestore, collection, addDoc, doc, onSnapshot,
+    query, where, updateDoc, serverTimestamp, setDoc
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  /* 네가 보낸 firebaseConfig 적용 */
+  /* 네 프로젝트 설정값 */
   const firebaseConfig = {
     apiKey: "AIzaSyAq1ICIJgBPCXb6huCqKnJRYrM8bvYr3jM",
     authDomain: "neary-demo-3b3c6.firebaseapp.com",
@@ -156,8 +153,6 @@
     messagingSenderId: "294237201199",
     appId: "1:294237201199:web:18d15eda48ba0aff2277da"
   };
-
-  /* initializeApp 은 반드시 필요합니다 */
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
@@ -167,6 +162,9 @@
   const hide = id => $(id).classList.add('hidden');
   const fill = (sel, arr)=> sel.innerHTML = arr.map(z=>`<option value="${z}">${z}</option>`).join('');
 
+  /* ➕ 데모 요구사항: 매 방문마다 새 세션 */
+  localStorage.removeItem('nearY');
+
   /* 간단 스토리지 */
   const Store = {
     g(){ return JSON.parse(localStorage.getItem('nearY')||'{}'); },
@@ -174,14 +172,11 @@
     set(k,v){ const o=this.g(); o[k]=v; this.s(o); },
     get(k,d=null){ const o=this.g(); return k in o? o[k]:d; }
   };
+  /* 항상 새로운 사용자 ID 부여 */
+  const uid = Math.random().toString(36).slice(2)+Date.now().toString(36);
+  Store.set('uid', uid);
 
-  /* ✅ 항상 새로운 사용자 세션을 생성하도록 변경 */
-  const uid = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  Store.set('uid', uid); // 항상 새로 생성
-  Store.set('email', null);
-  Store.set('role', null);
-  
-  /* 존 & 근접판정(500m 대체) */
+  /* 존 & 근접판정 */
   const ZONES=["ENG","LIB","BAEK","SCI","MED","DORM","MAIN","LAW","ECO","MUSE"];
   const ADJ={ ENG:["LIB","SCI","MAIN"], LIB:["ENG","BAEK","MAIN"], BAEK:["LIB","MAIN"], SCI:["ENG","MED"], MED:["SCI"], DORM:["MAIN"], MAIN:["ENG","LIB","BAEK","DORM","LAW","ECO"], LAW:["MAIN"], ECO:["MAIN"], MUSE:["MAIN"] };
   const isNear=(a,b)=> (a===b)|| (ADJ[a]||[]).includes(b) || (ADJ[b]||[]).includes(a);
@@ -189,7 +184,7 @@
   /* 셀렉트 채우기 */
   fill($('#r_from'),ZONES); fill($('#r_to'),ZONES); fill($('#h_zone'),ZONES);
 
-  /* 화면 전환 로직 */
+  /* 화면 전환 */
   function goto(scrId){
     ['#scr-login','#scr-profile','#scr-role','#scr-rider','#scr-helper'].forEach(id=>hide(id));
     show(scrId);
@@ -201,7 +196,7 @@
     if(!/@yonsei\.ac\.kr$/.test(email)){ $('#msgLogin').innerHTML=`<div class="warning">연세 메일 형식이 아닙니다.</div>`; return; }
     Store.set('email',email);
     $('#msgLogin').innerHTML=`<div class="ok">로그인 성공</div>`;
-    setTimeout(()=>goto('#scr-profile'),400);
+    setTimeout(()=>goto('#scr-profile'),300);
   };
 
   /* B. 프로필 */
@@ -210,21 +205,21 @@
     if(!n){ $('#msgProfile').innerHTML=`<div class="warning">닉네임을 입력하세요.</div>`; return; }
     Store.set('nickname',n); Store.set('gender',g);
     $('#msgProfile').innerHTML=`<div class="ok">저장완료</div>`;
-    setTimeout(()=>goto('#scr-role'),400);
+    setTimeout(()=>goto('#scr-role'),300);
   };
 
-  /* C. 역할 선택 → 단일 화면 */
+  /* C. 역할 */
   $('#chooseRider').onclick=()=>{ Store.set('role','rider'); startRider(); goto('#scr-rider'); };
   $('#chooseHelper').onclick=()=>{ Store.set('role','helper'); startHelper(); goto('#scr-helper'); };
 
   /* Firestore 컬렉션 */
-  const COL_REQ=collection(db,'requests');     // 요청
-  const COL_CAND=collection(db,'candidates');  // 후보(수락)
-  const COL_HELP=collection(db,'helperStates');// 도우미 상태(옵션)
+  const COL_REQ = collection(db,'requests');
+  const COL_CAND= collection(db,'candidates');
+  const COL_HELP= collection(db,'helperStates');
 
   /* D-1. 이동약자 */
   function startRider(){
-    // 내 요청에 대한 후보 실시간 감시
+    // 내 요청 후보 실시간
     onSnapshot(COL_CAND, snap=>{
       const mine=Store.get('currentReq',null);
       const box=$('#r_candidates');
@@ -270,41 +265,55 @@
 
   /* D-2. 도우미 */
   let helperUnsub=null;
+  function subscribeHelperInbox(){
+    const inbox=$('#h_inbox'); const errBox=$('#h_err'); errBox.textContent='';
+    // ✅ 쿼리 단순화: 정렬 제거 (인덱스/타임스탬프 대기 이슈 회피)
+    const q = query(COL_REQ, where('status','==','OPEN'));
+    if(helperUnsub) helperUnsub();
+
+    helperUnsub = onSnapshot(
+      q,
+      (snap)=>{
+        const zone=$('#h_zone').value||'MAIN';
+        let out='';
+        snap.forEach(d=>{
+          const v=d.data();
+          // 렌더링 단계에서 존 필터 적용 (같은/인접만 표시)
+          if(!isNear(zone, v.from)) return;
+          const acceptBtn = Store.get('passed')
+            ? `<button class="btn small" data-accept="${d.id}">수락</button>`
+            : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`;
+          out+=`<div class="item">
+                  <div><b>${v.from||'-'}</b> → <b>${v.to||'-'}</b> <span class="pill" style="float:right">요청</span></div>
+                  <div class="space"></div>
+                  <div class="muted tiny">${v.memo||'-'} · by ${v.riderName||'익명'}</div>
+                  <div class="space"></div>
+                  <div style="display:flex; gap:8px">${acceptBtn}
+                    <button class="btn secondary small" data-reject="${d.id}">거절</button>
+                  </div>
+                </div>`;
+        });
+        inbox.innerHTML = out || '표시할 요청 없음';
+      },
+      (error)=>{
+        errBox.textContent = '구독 에러: ' + error.message;
+        inbox.innerHTML = '표시할 요청 없음';
+      }
+    );
+  }
+
   function startHelper(){
-    // 최초 상태 기록
-    setDoc(doc(db,'helperStates',uid),{
+    setDoc(doc(db,'helperStates', uid),{
       uid,email:Store.get('email'),nickname:Store.get('nickname'),gender:Store.get('gender'),
       zone:$('#h_zone').value, passed:Store.get('passed')||false, updatedAt:serverTimestamp()
     },{merge:true});
-
-    // OPEN 요청만 실시간 구독
-    const q=query(COL_REQ, where('status','==','OPEN'), orderBy('createdAt','desc'));
-    if(helperUnsub) helperUnsub();
-    helperUnsub=onSnapshot(q,snap=>{
-      const zone=$('#h_zone').value||'MAIN';
-      let out='';
-      snap.forEach(d=>{
-        const v=d.data();
-        if(!isNear(zone,v.from)) return; // 같은/인접 존만
-        const acceptBtn = Store.get('passed')
-          ? `<button class="btn small" data-accept="${d.id}">수락</button>`
-          : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`;
-        out+=`<div class="item">
-                <div><b>${v.from}</b> → <b>${v.to}</b> <span class="pill" style="float:right">요청</span></div>
-                <div class="space"></div>
-                <div class="muted tiny">${v.memo||'-'} · by ${v.riderName||'익명'}</div>
-                <div class="space"></div>
-                <div style="display:flex; gap:8px">${acceptBtn}
-                  <button class="btn secondary small" data-reject="${d.id}">거절</button></div>
-              </div>`;
-      });
-      $('#h_inbox').innerHTML = out || '표시할 요청 없음';
-    });
+    subscribeHelperInbox();
   }
+
   $('#h_zone').onchange=async()=>{
     Store.set('h_zone',$('#h_zone').value);
     await setDoc(doc(db,'helperStates',uid),{ zone:$('#h_zone').value, updatedAt:serverTimestamp() },{merge:true});
-    startHelper();
+    subscribeHelperInbox();
   };
   $('#h_pass').onclick=async()=>{
     Store.set('passed',true);
@@ -322,21 +331,8 @@
     if(r){ alert('거절 처리(데모)'); }
   };
 
-  /* 기존 선택 복원 (새로고침 대비) */
-  if(Store.get('role')==='rider') startRider();
-  if(Store.get('role')==='helper') startHelper();
-
-  /* 첫 진입 분기 — 저장된 상태가 있으면 자동 진행 */
-  (function boot(){
-    const email=Store.get('email'); const nick=Store.get('nickname'); const role=Store.get('role');
-    if(!email) goto('#scr-login');
-    else if(!nick) goto('#scr-profile');
-    else if(!role) goto('#scr-role');
-    else goto(role==='rider' ? '#scr-rider' : '#scr-helper');
-    if(Store.get('passed')) $('#h_state').textContent='퀴즈 합격됨 · 수락 가능';
-    if(Store.get('h_zone')) $('#h_zone').value=Store.get('h_zone');
-    if(Store.get('currentReq')) $('#r_tripState').textContent='요청 보냄 (대기 중)';
-  })();
+  /* 부팅: 항상 로그인부터 시작 */
+  goto('#scr-login');
 </script>
 </body>
 </html>
