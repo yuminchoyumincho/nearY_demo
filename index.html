@@ -1,48 +1,54 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>nearY — 실시간 데모 (단일 수락/거절 반영)</title>
-<style>
-  :root{ --navy:#183857; --bg:#f6f8fb; --card:#fff; --sub:#64748b; --pill:#e9eff7; }
-  *{ box-sizing:border-box; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, 'Apple SD Gothic Neo', sans-serif }
-  body{ margin:0; background:var(--bg); color:#0f172a }
-  header{ padding:14px 16px; background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center }
-  header h1{ font-size:16px; margin:0; font-weight:800 }
-  .container{ padding:16px; max-width:960px; margin:0 auto }
-  .card{ background:var(--card); border-radius:14px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:14px }
-  label{ display:block; font-size:12px; color:#64748b; margin:10px 0 6px }
-  input[type=text], select, textarea{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff }
-  textarea{ min-height:84px }
-  .row{ display:flex; gap:12px; flex-wrap:wrap }
-  .row>div{ flex:1; min-width:200px }
-  .btn{ display:inline-flex; justify-content:center; align-items:center; min-width:140px; padding:12px 16px; border-radius:12px; background:var(--navy); color:#fff; border:none; font-weight:800; cursor:pointer }
-  .btn.secondary{ background:#fff; color:#183857; border:1px solid #d1d5db }
-  .btn.small{ min-width:auto; padding:8px 10px; font-weight:700 }
-  .muted{ color:#64748b; font-size:13px }
-  .space{ height:10px }
-  .list{ display:grid; gap:10px }
-  .item{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px }
-  .pill{ display:inline-block; padding:6px 10px; border-radius:999px; background:#e9eff7; color:#183857; font-size:12px }
-  .tiny{ font-size:12px }
-  .warning{ background:#fff7ed; color:#9a3412; border:1px solid #fcd34d; padding:10px; border-radius:8px }
-  .ok{ background:#ecfdf5; color:#065f46; border:1px solid #34d399; padding:10px; border-radius:8px }
-  .error{ color:#b91c1c; font-size:12px; margin-top:6px }
-  .hidden{ display:none !important }
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>nearY — 실시간 데모 (확장판)</title>
+
+  <style>
+    :root{
+      --navy:#183857; --bg:#f6f8fb; --card:#fff; --sub:#64748b; --pill:#e9eff7;
+    }
+    *{ box-sizing:border-box; font-family:system-ui, -apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif }
+    body{ margin:0; background:var(--bg); color:#0f172a }
+    header{ padding:14px 16px; background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center }
+    header h1{ font-size:16px; margin:0; font-weight:800 }
+    .container{ padding:16px; max-width:980px; margin:0 auto }
+    .card{ background:var(--card); border-radius:14px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:14px }
+    label{ display:block; font-size:12px; color:var(--sub); margin:10px 0 6px }
+    input, select, textarea{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff }
+    textarea{ min-height:84px }
+    .row{ display:flex; gap:12px; flex-wrap:wrap }
+    .row>div{ flex:1; min-width:220px }
+    .btn{ display:inline-flex; justify-content:center; align-items:center; min-width:140px; padding:12px 16px; border-radius:12px; background:var(--navy); color:#fff; border:none; font-weight:800; cursor:pointer }
+    .btn.secondary{ background:#fff; color:#183857; border:1px solid #d1d5db }
+    .btn.small{ min-width:auto; padding:8px 10px; font-weight:700 }
+    .muted{ color:#64748b; font-size:13px }
+    .space{ height:10px }
+    .list{ display:grid; gap:10px }
+    .item{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px }
+    .pill{ display:inline-block; padding:4px 8px; border-radius:999px; background:var(--pill); color:#183857; font-size:12px }
+    .tiny{ font-size:12px }
+    .ok{ background:#ecfdf5; color:#065f46; border:1px solid #34d399; padding:8px; border-radius:8px }
+    .warn{ background:#fff7ed; color:#9a3412; border:1px solid #fcd34d; padding:8px; border-radius:8px }
+    .err{ color:#b91c1c; font-size:12px; margin-top:6px }
+    .hidden{ display:none !important }
+    .segTitle{ font-weight:800; margin:0 0 8px 0 }
+    .inline{ display:inline-block; margin-left:6px }
+  </style>
 </head>
 <body>
+
 <header>
   <h1>nearY — 실시간 데모</h1>
-  <div class="tiny">로그인 → 프로필 → 역할 → 단일화면 / 첫 수락만 유효</div>
+  <div class="tiny">첫 수락만 유효 · 30분 내 요청만 표시</div>
 </header>
 
 <div class="container">
 
   <!-- A. 로그인 -->
   <section id="scr-login" class="card">
-    <h3 style="margin:0 0 8px 0">A. 재학생 로그인 (데모)</h3>
+    <h3 class="segTitle">A. 재학생 로그인 (데모)</h3>
     <label>연세 메일</label>
     <input id="email" placeholder="you@yonsei.ac.kr" />
     <div class="space"></div>
@@ -52,7 +58,7 @@
 
   <!-- B. 프로필 -->
   <section id="scr-profile" class="card hidden">
-    <h3 style="margin:0 0 8px 0">B. 프로필</h3>
+    <h3 class="segTitle">B. 프로필</h3>
     <div class="row">
       <div>
         <label>이름/닉네임</label>
@@ -73,7 +79,7 @@
 
   <!-- C. 역할 선택 -->
   <section id="scr-role" class="card hidden">
-    <h3 style="margin:0 0 8px 0">C. 역할 선택</h3>
+    <h3 class="segTitle">C. 역할 선택</h3>
     <div class="row">
       <button class="btn" id="chooseRider">이동약자</button>
       <button class="btn" id="chooseHelper">도우미</button>
@@ -84,7 +90,8 @@
 
   <!-- D. 이동약자 -->
   <section id="scr-rider" class="card hidden">
-    <h3 style="margin:0 0 8px 0">이동약자 — 도움 요청</h3>
+    <h3 class="segTitle">이동약자 — 도움 요청</h3>
+
     <div class="row">
       <div>
         <label>출발지 존</label>
@@ -95,22 +102,23 @@
         <select id="r_to"></select>
       </div>
     </div>
+
     <label>요청 메모</label>
     <textarea id="r_memo" placeholder="엘리베이터 선호 등"></textarea>
+
     <div class="space"></div>
     <button class="btn" id="r_send">요청 보내기</button>
     <div id="r_msg" class="space tiny"></div>
 
     <div class="space"></div>
-    <h4>여정 상태</h4>
+    <h4 class="segTitle">여정 상태</h4>
     <div id="r_tripState" class="tiny muted">-</div>
-    <div class="space"></div>
-    <button class="btn secondary" id="r_arrive">도착 (PIN 입력)</button>
   </section>
 
   <!-- E. 도우미 -->
   <section id="scr-helper" class="card hidden">
-    <h3 style="margin:0 0 8px 0">도우미 — 요청 수신함</h3>
+    <h3 class="segTitle">도우미 — 요청 수신함</h3>
+
     <div class="row">
       <div>
         <label>내 현재 존</label>
@@ -126,18 +134,35 @@
     </div>
 
     <div class="space"></div>
-    <h4>도착한 요청 (같은/인접 존만 표시)</h4>
-    <div id="h_inbox" class="list tiny muted">대기 중…</div>
-    <div id="h_err" class="error"></div>
+    <div class="row">
+      <div>
+        <label>표시 옵션</label>
+        <div class="tiny muted">
+          30분 초과 요청 자동 숨김 · 같은/인접 존만 표시
+        </div>
+      </div>
+      <div>
+        <label>디버그 상태</label>
+        <div id="h_err" class="err tiny"></div>
+      </div>
+    </div>
 
     <div class="space"></div>
-    <h4>현재 여정 상태</h4>
+    <h4 class="segTitle">도착한 요청</h4>
+    <div id="h_inbox" class="list tiny muted">대기 중…</div>
+
+    <div class="space"></div>
+    <h4 class="segTitle">현재 여정 상태</h4>
     <div id="h_tripState" class="tiny muted">-</div>
   </section>
+
 </div>
 
-<!-- Firebase CDN -->
+<!-- Firebase (CDN) -->
 <script type="module">
+  /***********************
+   * Firebase 초기화
+   ***********************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import {
     getFirestore, collection, addDoc, doc, onSnapshot,
@@ -145,7 +170,7 @@
     runTransaction, arrayUnion
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  /* 네 프로젝트 설정 */
+  // 네 프로젝트 설정 (사용자 제공값)
   const firebaseConfig = {
     apiKey: "AIzaSyAq1ICIJgBPCXb6huCqKnJRYrM8bvYr3jM",
     authDomain: "neary-demo-3b3c6.firebaseapp.com",
@@ -154,157 +179,269 @@
     messagingSenderId: "294237201199",
     appId: "1:294237201199:web:18d15eda48ba0aff2277da"
   };
+
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  /* 유틸 */
+  /***********************
+   * DOM 헬퍼
+   ***********************/
   const $ = s => document.querySelector(s);
   const show = id => $(id).classList.remove('hidden');
   const hide = id => $(id).classList.add('hidden');
-  const fill = (sel, arr)=> sel.innerHTML = arr.map(z=>`<option value="${z}">${z}</option>`).join('');
 
-  /* 매 방문 새 세션 */
-  localStorage.removeItem('nearY');
+  // 한 페이지 내 섹션 전환
+  function goto(scrId){
+    ['#scr-login','#scr-profile','#scr-role','#scr-rider','#scr-helper'].forEach(id=>hide(id));
+    show(scrId);
+  }
 
-  /* 간단 스토리지 */
+  /***********************
+   * 존 & 근접 판정 (GPS 대체)
+   ***********************/
+  const ZONES = ["ENG","LIB","BAEK","SCI","MED","DORM","MAIN","LAW","ECO","MUSE"];
+  const ADJ   = {
+    ENG:["LIB","SCI","MAIN"],
+    LIB:["ENG","BAEK","MAIN"],
+    BAEK:["LIB","MAIN"],
+    SCI:["ENG","MED"],
+    MED:["SCI"],
+    DORM:["MAIN"],
+    MAIN:["ENG","LIB","BAEK","DORM","LAW","ECO"],
+    LAW:["MAIN"],
+    ECO:["MAIN"],
+    MUSE:["MAIN"]
+  };
+  const isNear = (a,b)=> (a===b) || (ADJ[a]||[]).includes(b) || (ADJ[b]||[]).includes(a);
+
+  // 셀렉트 초기화
+  function fillSelects(){
+    const toOpt = arr => arr.map(z=>`<option value="${z}">${z}</option>`).join('');
+    $('#r_from').innerHTML = toOpt(ZONES);
+    $('#r_to').innerHTML   = toOpt(ZONES);
+    $('#h_zone').innerHTML = toOpt(ZONES);
+  }
+  fillSelects();
+
+  /***********************
+   * 간단 스토리지 & 세션
+   ***********************/
+  localStorage.removeItem('nearY'); // 데모: 매 방문 새 세션
+
   const Store = {
     g(){ return JSON.parse(localStorage.getItem('nearY')||'{}'); },
     s(o){ localStorage.setItem('nearY', JSON.stringify(o)); },
     set(k,v){ const o=this.g(); o[k]=v; this.s(o); },
     get(k,d=null){ const o=this.g(); return k in o? o[k]:d; }
   };
+
+  // 항상 새로운 임시 uid
   const uid = Math.random().toString(36).slice(2)+Date.now().toString(36);
   Store.set('uid', uid);
 
-  /* 존 */
-  const ZONES=["ENG","LIB","BAEK","SCI","MED","DORM","MAIN","LAW","ECO","MUSE"];
-  const ADJ={ ENG:["LIB","SCI","MAIN"], LIB:["ENG","BAEK","MAIN"], BAEK:["LIB","MAIN"], SCI:["ENG","MED"], MED:["SCI"], DORM:["MAIN"], MAIN:["ENG","LIB","BAEK","DORM","LAW","ECO"], LAW:["MAIN"], ECO:["MAIN"], MUSE:["MAIN"] };
-  const isNear=(a,b)=> (a===b)|| (ADJ[a]||[]).includes(b) || (ADJ[b]||[]).includes(a);
-  fill($('#r_from'),ZONES); fill($('#r_to'),ZONES); fill($('#h_zone'),ZONES);
+  /***********************
+   * 공용 컬렉션 핸들
+   ***********************/
+  const COL_REQ = collection(db,'requests');        // 요청
+  const COL_HELP= collection(db,'helperStates');    // 도우미 상태(옵션)
 
-  /* 화면 전환 */
-  function goto(scrId){ ['#scr-login','#scr-profile','#scr-role','#scr-rider','#scr-helper'].forEach(id=>hide(id)); show(scrId); }
-
-  /* A. 로그인 */
-  $('#btnVerify').onclick=()=>{
-    const email=$('#email').value.trim();
-    if(!/@yonsei\.ac\.kr$/.test(email)){ $('#msgLogin').innerHTML=`<div class="warning">연세 메일 형식이 아닙니다.</div>`; return; }
-    Store.set('email',email);
-    $('#msgLogin').innerHTML=`<div class="ok">로그인 성공</div>`;
-    setTimeout(()=>goto('#scr-profile'),300);
+  /***********************
+   * A. 로그인
+   ***********************/
+  $('#btnVerify').onclick = ()=>{
+    const email = $('#email').value.trim();
+    if(!/@yonsei\.ac\.kr$/.test(email)){
+      $('#msgLogin').innerHTML = `<div class="warn">연세 메일 형식이 아닙니다.</div>`;
+      return;
+    }
+    Store.set('email', email);
+    $('#msgLogin').innerHTML = `<div class="ok">로그인 성공</div>`;
+    setTimeout(()=>goto('#scr-profile'), 300);
   };
 
-  /* B. 프로필 */
-  $('#btnSaveProfile').onclick=()=>{
-    const n=$('#nickname').value.trim(); const g=$('#gender').value;
-    if(!n){ $('#msgProfile').innerHTML=`<div class="warning">닉네임을 입력하세요.</div>`; return; }
-    Store.set('nickname',n); Store.set('gender',g);
-    $('#msgProfile').innerHTML=`<div class="ok">저장완료</div>`;
-    setTimeout(()=>goto('#scr-role'),300);
+  /***********************
+   * B. 프로필
+   ***********************/
+  $('#btnSaveProfile').onclick = ()=>{
+    const n = $('#nickname').value.trim();
+    const g = $('#gender').value;
+    if(!n){
+      $('#msgProfile').innerHTML = `<div class="warn">닉네임을 입력하세요.</div>`;
+      return;
+    }
+    Store.set('nickname', n);
+    Store.set('gender', g);
+    $('#msgProfile').innerHTML = `<div class="ok">저장완료</div>`;
+    setTimeout(()=>goto('#scr-role'), 300);
   };
 
-  /* C. 역할 */
-  $('#chooseRider').onclick=()=>{ Store.set('role','rider'); startRider(); goto('#scr-rider'); };
-  $('#chooseHelper').onclick=()=>{ Store.set('role','helper'); startHelper(); goto('#scr-helper'); };
+  /***********************
+   * C. 역할 선택
+   ***********************/
+  $('#chooseRider').onclick = ()=>{ Store.set('role','rider'); startRider();  goto('#scr-rider');  };
+  $('#chooseHelper').onclick = ()=>{ Store.set('role','helper'); startHelper(); goto('#scr-helper'); };
 
-  /* 컬렉션 */
-  const COL_REQ = collection(db,'requests');
-  const COL_HELP= collection(db,'helperStates');
-
-  /* D. 이동약자 */
+  /***********************
+   * D. 이동약자
+   *  - 요청 생성
+   *  - 내 요청 문서 onSnapshot(doc)으로 상태 실시간 표시
+   *  - 도우미가 수락 → 즉시 "OOO님이 수락" 노출
+   ***********************/
   let riderReqId = null;
+
   function startRider(){
-    // 내 요청 단일 문서 실시간 구독
-    const watchMyRequest = (reqId)=>{
-      riderReqId = reqId;
-      const ref = doc(db,'requests',reqId);
-      onSnapshot(ref, snap=>{
-        if(!snap.exists()) return;
-        const v = snap.data();
-        // 상태 UI
-        if(v.status === 'OPEN'){
-          $('#r_tripState').textContent = '요청 대기 중';
-          $('#r_msg').innerHTML = `<div class="ok">요청 전송됨</div>`;
-        }else if(v.status === 'ACCEPTED'){
-          $('#r_tripState').textContent = `도우미 수락: ${v.acceptedHelperName||'도우미'} (1명)`;
-          $('#r_msg').innerHTML = `<div class="ok">${v.acceptedHelperName||'도우미'}님이 수락했습니다</div>`;
-        }else if(v.status === 'DONE'){
-          $('#r_tripState').textContent = '도착 완료';
-          $('#r_msg').innerHTML = `<div class="ok">여정이 종료되었습니다</div>`;
-        }else{
-          $('#r_tripState').textContent = v.status || '-';
-        }
-      });
-    };
-
-    // 기존 요청이 있다면 계속 구독
+    // 기존 요청 재구독
     const existing = Store.get('currentReq', null);
-    if(existing) watchMyRequest(existing);
+    if(existing){ listenRider(existing); }
 
-    // 보내기 버튼
+    // 요청 보내기
     $('#r_send').onclick = async ()=>{
-      const from=$('#r_from').value, to=$('#r_to').value, memo=$('#r_memo').value.trim();
+      const from = $('#r_from').value;
+      const to   = $('#r_to').value;
+      const memo = $('#r_memo').value.trim();
+
       const ref = await addDoc(COL_REQ, {
         riderId: uid,
         riderName: Store.get('nickname','익명'),
         riderGender: Store.get('gender','F'),
         from, to, memo,
-        status: 'OPEN',
-        rejectedBy: [],
-        createdAt: serverTimestamp()
+        status: 'OPEN',                 // 처음엔 OPEN
+        rejectedBy: [],                 // 도우미별 거절 목록
+        createdAt: serverTimestamp()    // 30분 필터 기준
       });
-      Store.set('currentReq', ref.id);
-      watchMyRequest(ref.id);
-    };
 
-    // 도착 처리
-    $('#r_arrive').onclick = async ()=>{
-      const pin=prompt('도착 PIN (데모: 1234)');
-      if(pin!=='1234'){ alert('PIN 불일치'); return; }
-      const reqId = Store.get('currentReq', null);
-      if(!reqId){ alert('요청 없음'); return; }
-      await updateDoc(doc(db,'requests',reqId), { status:'DONE', finishedAt:serverTimestamp() });
-      alert('감사합니다!');
+      Store.set('currentReq', ref.id);
+      $('#r_msg').innerHTML = `<div class="ok">요청 전송됨</div>`;
+      listenRider(ref.id);
     };
   }
 
-  /* E. 도우미 */
-  let helperUnsub=null;
+  // 내 요청을 단일 문서로 구독해서 상태 변화 즉시 반영
+  function listenRider(reqId){
+    riderReqId = reqId;
+    const ref = doc(db,'requests', reqId);
+
+    onSnapshot(ref, snap=>{
+      if(!snap.exists()) return;
+      const v = snap.data();
+
+      // 상태 UI 업데이트
+      if(v.status === 'OPEN'){
+        $('#r_tripState').textContent = '요청 대기 중';
+      }else if(v.status === 'ACCEPTED'){
+        $('#r_tripState').textContent = `${v.acceptedHelperName||'도우미'}님이 수락했습니다 (1명)`;
+        $('#r_msg').innerHTML = `<div class="ok">수락 완료</div>`;
+      }else if(v.status === 'DONE'){
+        $('#r_tripState').textContent = '도착 완료';
+      }else{
+        $('#r_tripState').textContent = v.status || '-';
+      }
+    });
+
+    // 도착 처리 (PIN)
+    $('#r_arrive')?.addEventListener('click', async ()=>{
+      const pin = prompt('도착 PIN (데모: 1234)');
+      if(pin !== '1234'){ alert('PIN 불일치'); return; }
+      await updateDoc(ref, { status:'DONE', finishedAt:serverTimestamp() });
+      alert('감사합니다!');
+    }, { once:false });
+  }
+
+  /***********************
+   * E. 도우미
+   *  - OPEN 요청만 구독
+   *  - 같은/인접 존만 렌더링
+   *  - 30분 초과 요청 숨김
+   *  - 수락: 트랜잭션으로 단 한 명만 ACCEPTED 처리
+   *  - 거절: rejectedBy에 내 uid 추가 → 내 화면에서 숨김
+   ***********************/
+  let helperUnsub = null;
+
+  function startHelper(){
+    // 초기 상태 업서트(선택사항)
+    setDoc(doc(db,'helperStates', uid),{
+      uid,
+      email: Store.get('email'),
+      nickname: Store.get('nickname'),
+      gender: Store.get('gender'),
+      zone: $('#h_zone').value,
+      passed: false,
+      updatedAt: serverTimestamp()
+    },{ merge:true });
+
+    // 퀴즈 합격 처리
+    $('#h_pass').onclick = async ()=>{
+      $('#h_state').textContent = '퀴즈 합격됨 · 수락 가능';
+      await setDoc(doc(db,'helperStates', uid),{ passed:true },{ merge:true });
+      subscribeHelperInbox();
+    };
+
+    // 존 변경 → 재구독(렌더링 필터 업데이트)
+    $('#h_zone').onchange = async ()=>{
+      await setDoc(doc(db,'helperStates', uid),{ zone:$('#h_zone').value, updatedAt:serverTimestamp() },{ merge:true });
+      subscribeHelperInbox();
+    };
+
+    subscribeHelperInbox();
+  }
+
+  // 도우미 인박스 구독
   function subscribeHelperInbox(){
-    const inbox=$('#h_inbox'); const errBox=$('#h_err'); errBox.textContent='';
-    // OPEN만 구독 (수락 시 바로 사라짐)
-    const q = query(COL_REQ, where('status','==','OPEN'));
+    const inbox = $('#h_inbox');
+    const errBox= $('#h_err');
+    errBox.textContent='';
+
+    // 항상 최신 now로 연산 (스냅샷 때마다 계산)
     if(helperUnsub) helperUnsub();
 
+    const qOpen = query(COL_REQ, where('status','==','OPEN'));
     helperUnsub = onSnapshot(
-      q,
+      qOpen,
       (snap)=>{
-        const zone=$('#h_zone').value||'MAIN';
-        let out='';
+        const zone = $('#h_zone').value || 'MAIN';
+        let out = '';
+        const now = Date.now();
+
         snap.forEach(d=>{
-          const v=d.data();
+          const v = d.data();
+
           // 내가 거절한 요청은 숨김
           if(Array.isArray(v.rejectedBy) && v.rejectedBy.includes(uid)) return;
-          // 같은/인접 존만
+
+          // 같은/인접 존만 표시
           if(!isNear(zone, v.from)) return;
 
-          const acceptBtn = Store.get('passed')
-            ? `<button class="btn small" data-accept="${d.id}">수락</button>`
-            : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`;
+          // createdAt이 없거나 30분 초과면 숨김
+          if(!v.createdAt) return;
+          const ageMin = (now - v.createdAt.toMillis())/60000;
+          if(ageMin > 30) return;
 
-          // 이동약자 닉네임을 카드에 명확히 표시
+          // "몇 분 전" 텍스트
+          const mins = Math.max(0, Math.floor(ageMin));
+          const timeTxt = mins<1 ? '방금' : `${mins}분 전`;
+
+          const canAccept = $('#h_state').textContent.includes('합격');
           const riderName = v.riderName || '익명';
 
-          out+=`<div class="item">
-                  <div><b>${riderName}</b> 님의 요청 · <span class="pill">${v.from||'-'}</span> → <b>${v.to||'-'}</b></div>
-                  <div class="space"></div>
-                  <div class="muted tiny">${v.memo||'-'}</div>
-                  <div class="space"></div>
-                  <div style="display:flex; gap:8px">${acceptBtn}
-                    <button class="btn secondary small" data-reject="${d.id}">거절</button>
-                  </div>
-                </div>`;
+          out += `
+            <div class="item">
+              <div><b>${riderName}</b> 님의 요청 <span class="pill inline">${timeTxt}</span></div>
+              <div class="space"></div>
+              <div><span class="pill">${v.from||'-'}</span> → <b>${v.to||'-'}</b></div>
+              <div class="space"></div>
+              <div class="muted tiny">${v.memo || '-'}</div>
+              <div class="space"></div>
+              <div style="display:flex; gap:8px">
+                ${canAccept
+                  ? `<button class="btn small" data-accept="${d.id}">수락</button>`
+                  : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`
+                }
+                <button class="btn secondary small" data-reject="${d.id}">거절</button>
+              </div>
+            </div>
+          `;
         });
+
         inbox.innerHTML = out || '표시할 요청 없음';
       },
       (error)=>{
@@ -312,68 +449,52 @@
         inbox.innerHTML = '표시할 요청 없음';
       }
     );
-  }
 
-  function startHelper(){
-    setDoc(doc(db,'helperStates', uid),{
-      uid,email:Store.get('email'),nickname:Store.get('nickname'),gender:Store.get('gender'),
-      zone:$('#h_zone').value, passed:Store.get('passed')||false, updatedAt:serverTimestamp()
-    },{merge:true});
-    subscribeHelperInbox();
-  }
+    // 수락/거절 이벤트 위임
+    inbox.onclick = async (e)=>{
+      const acceptId = e.target?.getAttribute('data-accept');
+      const rejectId = e.target?.getAttribute('data-reject');
 
-  $('#h_zone').onchange=async()=>{
-    Store.set('h_zone',$('#h_zone').value);
-    await setDoc(doc(db,'helperStates',uid),{ zone:$('$h_zone').value, updatedAt:serverTimestamp() },{merge:true});
-    subscribeHelperInbox();
-  };
-  $('#h_pass').onclick=async()=>{
-    Store.set('passed',true);
-    $('#h_state').textContent='퀴즈 합격됨 · 수락 가능';
-    await setDoc(doc(db,'helperStates',uid),{ passed:true },{merge:true});
-  };
+      if(acceptId){
+        // 한 명만 수락: 트랜잭션으로 OPEN → ACCEPTED 원자적 업데이트
+        try{
+          await runTransaction(db, async (tx)=>{
+            const ref = doc(db,'requests', acceptId);
+            const snap = await tx.get(ref);
+            if(!snap.exists()) throw new Error('요청이 존재하지 않습니다.');
+            const v = snap.data();
+            if(v.status !== 'OPEN') throw new Error('이미 다른 도우미가 수락했습니다.');
 
-  // 수락/거절 처리
-  $('#h_inbox').onclick=async e=>{
-    const acceptId=e.target?.getAttribute('data-accept');
-    const rejectId=e.target?.getAttribute('data-reject');
-
-    if(acceptId){
-      if(!Store.get('passed')){ alert('퀴즈 합격 필요'); return; }
-
-      try{
-        // 🔒 단 한 명만 수락: 트랜잭션으로 상태 OPEN → ACCEPTED
-        await runTransaction(db, async (tx)=>{
-          const ref = doc(db,'requests',acceptId);
-          const snap = await tx.get(ref);
-          if(!snap.exists()) throw new Error('요청이 존재하지 않습니다');
-          const v = snap.data();
-          if(v.status !== 'OPEN') throw new Error('이미 다른 도우미가 수락했습니다');
-
-          tx.update(ref, {
-            status: 'ACCEPTED',
-            acceptedHelperId: uid,
-            acceptedHelperName: Store.get('nickname','도우미'),
-            acceptedAt: serverTimestamp()
+            tx.update(ref, {
+              status: 'ACCEPTED',
+              acceptedHelperId: uid,
+              acceptedHelperName: Store.get('nickname','도우미'),
+              acceptedAt: serverTimestamp()
+            });
           });
-        });
 
-        $('#h_tripState').textContent='수락 완료 (이동약자 측에 알림)';
-        // OPEN 구독이므로 수락 직후 리스트에서 자동 제거됨
-      }catch(err){
-        alert(err.message || '수락 중 오류');
+          // (보조) 트랜잭션 직후 한 번 더 touch → 스냅샷 전파 가속
+          await updateDoc(doc(db,'requests', acceptId), { touchedAt: serverTimestamp() });
+
+          $('#h_tripState').textContent = '수락 완료 (이동약자에게 반영됨)';
+          // OPEN 구독이므로 리스트에서 자동 제거됨
+        }catch(err){
+          alert(err.message || '수락 중 오류');
+        }
       }
-    }
 
-    if(rejectId){
-      // 이 도우미만 숨기기
-      await updateDoc(doc(db,'requests',rejectId), { rejectedBy: arrayUnion(uid) });
-      // 로컬 즉시 반영은 onSnapshot에 의해 자동 처리됨(다음 스냅샷에서 필터됨)
-    }
-  };
+      if(rejectId){
+        await updateDoc(doc(db,'requests', rejectId), { rejectedBy: arrayUnion(uid) });
+        // 다음 스냅샷에서 자동 필터됨
+      }
+    };
+  }
 
-  /* 부팅 */
+  /***********************
+   * 부팅: 로그인부터 시작
+   ***********************/
   goto('#scr-login');
 </script>
+
 </body>
 </html>
