@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>nearY</title>
+<title>nearY — 실시간 데모 (단일 수락/거절 반영)</title>
 <style>
   :root{ --navy:#183857; --bg:#f6f8fb; --card:#fff; --sub:#64748b; --pill:#e9eff7; }
   *{ box-sizing:border-box; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, 'Apple SD Gothic Neo', sans-serif }
@@ -33,10 +33,14 @@
 </style>
 </head>
 <body>
+<header>
+  <h1>nearY — 실시간 데모</h1>
+  <div class="tiny">로그인 → 프로필 → 역할 → 단일화면 / 첫 수락만 유효</div>
+</header>
 
 <div class="container">
 
-  <!-- 화면 1: 로그인 -->
+  <!-- A. 로그인 -->
   <section id="scr-login" class="card">
     <h3 style="margin:0 0 8px 0">A. 재학생 로그인 (데모)</h3>
     <label>연세 메일</label>
@@ -46,7 +50,7 @@
     <div id="msgLogin" class="space tiny"></div>
   </section>
 
-  <!-- 화면 2: 프로필 -->
+  <!-- B. 프로필 -->
   <section id="scr-profile" class="card hidden">
     <h3 style="margin:0 0 8px 0">B. 프로필</h3>
     <div class="row">
@@ -67,7 +71,7 @@
     <div id="msgProfile" class="space tiny"></div>
   </section>
 
-  <!-- 화면 3: 역할 선택 -->
+  <!-- C. 역할 선택 -->
   <section id="scr-role" class="card hidden">
     <h3 style="margin:0 0 8px 0">C. 역할 선택</h3>
     <div class="row">
@@ -78,7 +82,7 @@
     <div class="muted tiny">선택하면 해당 역할 화면만 보입니다.</div>
   </section>
 
-  <!-- 화면 4: 이동약자 단일화면 -->
+  <!-- D. 이동약자 -->
   <section id="scr-rider" class="card hidden">
     <h3 style="margin:0 0 8px 0">이동약자 — 도움 요청</h3>
     <div class="row">
@@ -98,17 +102,13 @@
     <div id="r_msg" class="space tiny"></div>
 
     <div class="space"></div>
-    <h4>수락한 도우미 후보</h4>
-    <div id="r_candidates" class="list tiny muted">아직 후보 없음</div>
-
-    <div class="space"></div>
     <h4>여정 상태</h4>
     <div id="r_tripState" class="tiny muted">-</div>
     <div class="space"></div>
     <button class="btn secondary" id="r_arrive">도착 (PIN 입력)</button>
   </section>
 
-  <!-- 화면 5: 도우미 단일화면 -->
+  <!-- E. 도우미 -->
   <section id="scr-helper" class="card hidden">
     <h3 style="margin:0 0 8px 0">도우미 — 요청 수신함</h3>
     <div class="row">
@@ -136,15 +136,16 @@
   </section>
 </div>
 
-<!-- Firebase: CDN 모듈 사용 -->
+<!-- Firebase CDN -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import {
     getFirestore, collection, addDoc, doc, onSnapshot,
-    query, where, updateDoc, serverTimestamp, setDoc
+    query, where, updateDoc, serverTimestamp, setDoc,
+    runTransaction, arrayUnion
   } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  /* 네 프로젝트 설정값 */
+  /* 네 프로젝트 설정 */
   const firebaseConfig = {
     apiKey: "AIzaSyAq1ICIJgBPCXb6huCqKnJRYrM8bvYr3jM",
     authDomain: "neary-demo-3b3c6.firebaseapp.com",
@@ -162,7 +163,7 @@
   const hide = id => $(id).classList.add('hidden');
   const fill = (sel, arr)=> sel.innerHTML = arr.map(z=>`<option value="${z}">${z}</option>`).join('');
 
-  /* ➕ 데모 요구사항: 매 방문마다 새 세션 */
+  /* 매 방문 새 세션 */
   localStorage.removeItem('nearY');
 
   /* 간단 스토리지 */
@@ -172,23 +173,17 @@
     set(k,v){ const o=this.g(); o[k]=v; this.s(o); },
     get(k,d=null){ const o=this.g(); return k in o? o[k]:d; }
   };
-  /* 항상 새로운 사용자 ID 부여 */
   const uid = Math.random().toString(36).slice(2)+Date.now().toString(36);
   Store.set('uid', uid);
 
-  /* 존 & 근접판정 */
+  /* 존 */
   const ZONES=["ENG","LIB","BAEK","SCI","MED","DORM","MAIN","LAW","ECO","MUSE"];
   const ADJ={ ENG:["LIB","SCI","MAIN"], LIB:["ENG","BAEK","MAIN"], BAEK:["LIB","MAIN"], SCI:["ENG","MED"], MED:["SCI"], DORM:["MAIN"], MAIN:["ENG","LIB","BAEK","DORM","LAW","ECO"], LAW:["MAIN"], ECO:["MAIN"], MUSE:["MAIN"] };
   const isNear=(a,b)=> (a===b)|| (ADJ[a]||[]).includes(b) || (ADJ[b]||[]).includes(a);
-
-  /* 셀렉트 채우기 */
   fill($('#r_from'),ZONES); fill($('#r_to'),ZONES); fill($('#h_zone'),ZONES);
 
   /* 화면 전환 */
-  function goto(scrId){
-    ['#scr-login','#scr-profile','#scr-role','#scr-rider','#scr-helper'].forEach(id=>hide(id));
-    show(scrId);
-  }
+  function goto(scrId){ ['#scr-login','#scr-profile','#scr-role','#scr-rider','#scr-helper'].forEach(id=>hide(id)); show(scrId); }
 
   /* A. 로그인 */
   $('#btnVerify').onclick=()=>{
@@ -212,62 +207,72 @@
   $('#chooseRider').onclick=()=>{ Store.set('role','rider'); startRider(); goto('#scr-rider'); };
   $('#chooseHelper').onclick=()=>{ Store.set('role','helper'); startHelper(); goto('#scr-helper'); };
 
-  /* Firestore 컬렉션 */
+  /* 컬렉션 */
   const COL_REQ = collection(db,'requests');
-  const COL_CAND= collection(db,'candidates');
   const COL_HELP= collection(db,'helperStates');
 
-  /* D-1. 이동약자 */
+  /* D. 이동약자 */
+  let riderReqId = null;
   function startRider(){
-    // 내 요청 후보 실시간
-    onSnapshot(COL_CAND, snap=>{
-      const mine=Store.get('currentReq',null);
-      const box=$('#r_candidates');
-      if(!mine){ box.textContent='아직 요청하지 않았습니다'; return; }
-      let out='';
-      snap.forEach(d=>{
-        const v=d.data();
-        if(v.requestId!==mine) return;
-        out+=`<div class="item">
-                <div><b>${v.helperName||'도우미'}</b> <span class="pill">후보</span></div>
-                <div class="space"></div>
-                <button class="btn small" data-pick="${d.id}" data-req="${mine}">이 도우미 선택</button>
-              </div>`;
+    // 내 요청 단일 문서 실시간 구독
+    const watchMyRequest = (reqId)=>{
+      riderReqId = reqId;
+      const ref = doc(db,'requests',reqId);
+      onSnapshot(ref, snap=>{
+        if(!snap.exists()) return;
+        const v = snap.data();
+        // 상태 UI
+        if(v.status === 'OPEN'){
+          $('#r_tripState').textContent = '요청 대기 중';
+          $('#r_msg').innerHTML = `<div class="ok">요청 전송됨</div>`;
+        }else if(v.status === 'ACCEPTED'){
+          $('#r_tripState').textContent = `도우미 수락: ${v.acceptedHelperName||'도우미'} (1명)`;
+          $('#r_msg').innerHTML = `<div class="ok">${v.acceptedHelperName||'도우미'}님이 수락했습니다</div>`;
+        }else if(v.status === 'DONE'){
+          $('#r_tripState').textContent = '도착 완료';
+          $('#r_msg').innerHTML = `<div class="ok">여정이 종료되었습니다</div>`;
+        }else{
+          $('#r_tripState').textContent = v.status || '-';
+        }
       });
-      box.innerHTML = out || '아직 도우미가 수락하지 않았습니다';
-    });
-  }
-  $('#r_send').onclick=async()=>{
-    const from=$('#r_from').value, to=$('#r_to').value, memo=$('#r_memo').value.trim();
-    const ref=await addDoc(COL_REQ,{
-      riderId:uid, riderName:Store.get('nickname','익명'), riderGender:Store.get('gender','F'),
-      from,to,memo,status:'OPEN',createdAt:serverTimestamp()
-    });
-    Store.set('currentReq',ref.id);
-    $('#r_msg').innerHTML=`<div class="ok">요청 전송됨</div>`;
-    $('#r_tripState').textContent='요청 대기 중';
-  };
-  $('#r_candidates').onclick=async e=>{
-    const pick=e.target?.getAttribute('data-pick'); const req=e.target?.getAttribute('data-req');
-    if(pick&&req){
-      await updateDoc(doc(db,'requests',req),{ status:'ONGOING', pickedCandidate:pick, startedAt:serverTimestamp() });
-      $('#r_tripState').textContent='동행 중';
-    }
-  };
-  $('#r_arrive').onclick=async()=>{
-    const pin=prompt('도착 PIN (데모: 1234)');
-    if(pin!=='1234'){ alert('PIN 불일치'); return; }
-    const req=Store.get('currentReq',null); if(!req){ alert('요청 없음'); return; }
-    await updateDoc(doc(db,'requests',req),{ status:'DONE', finishedAt:serverTimestamp() });
-    $('#r_tripState').textContent='도착 완료';
-    alert('감사합니다!');
-  };
+    };
 
-  /* D-2. 도우미 */
+    // 기존 요청이 있다면 계속 구독
+    const existing = Store.get('currentReq', null);
+    if(existing) watchMyRequest(existing);
+
+    // 보내기 버튼
+    $('#r_send').onclick = async ()=>{
+      const from=$('#r_from').value, to=$('#r_to').value, memo=$('#r_memo').value.trim();
+      const ref = await addDoc(COL_REQ, {
+        riderId: uid,
+        riderName: Store.get('nickname','익명'),
+        riderGender: Store.get('gender','F'),
+        from, to, memo,
+        status: 'OPEN',
+        rejectedBy: [],
+        createdAt: serverTimestamp()
+      });
+      Store.set('currentReq', ref.id);
+      watchMyRequest(ref.id);
+    };
+
+    // 도착 처리
+    $('#r_arrive').onclick = async ()=>{
+      const pin=prompt('도착 PIN (데모: 1234)');
+      if(pin!=='1234'){ alert('PIN 불일치'); return; }
+      const reqId = Store.get('currentReq', null);
+      if(!reqId){ alert('요청 없음'); return; }
+      await updateDoc(doc(db,'requests',reqId), { status:'DONE', finishedAt:serverTimestamp() });
+      alert('감사합니다!');
+    };
+  }
+
+  /* E. 도우미 */
   let helperUnsub=null;
   function subscribeHelperInbox(){
     const inbox=$('#h_inbox'); const errBox=$('#h_err'); errBox.textContent='';
-    // ✅ 쿼리 단순화: 정렬 제거 (인덱스/타임스탬프 대기 이슈 회피)
+    // OPEN만 구독 (수락 시 바로 사라짐)
     const q = query(COL_REQ, where('status','==','OPEN'));
     if(helperUnsub) helperUnsub();
 
@@ -278,15 +283,22 @@
         let out='';
         snap.forEach(d=>{
           const v=d.data();
-          // 렌더링 단계에서 존 필터 적용 (같은/인접만 표시)
+          // 내가 거절한 요청은 숨김
+          if(Array.isArray(v.rejectedBy) && v.rejectedBy.includes(uid)) return;
+          // 같은/인접 존만
           if(!isNear(zone, v.from)) return;
+
           const acceptBtn = Store.get('passed')
             ? `<button class="btn small" data-accept="${d.id}">수락</button>`
             : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`;
+
+          // 이동약자 닉네임을 카드에 명확히 표시
+          const riderName = v.riderName || '익명';
+
           out+=`<div class="item">
-                  <div><b>${v.from||'-'}</b> → <b>${v.to||'-'}</b> <span class="pill" style="float:right">요청</span></div>
+                  <div><b>${riderName}</b> 님의 요청 · <span class="pill">${v.from||'-'}</span> → <b>${v.to||'-'}</b></div>
                   <div class="space"></div>
-                  <div class="muted tiny">${v.memo||'-'} · by ${v.riderName||'익명'}</div>
+                  <div class="muted tiny">${v.memo||'-'}</div>
                   <div class="space"></div>
                   <div style="display:flex; gap:8px">${acceptBtn}
                     <button class="btn secondary small" data-reject="${d.id}">거절</button>
@@ -312,7 +324,7 @@
 
   $('#h_zone').onchange=async()=>{
     Store.set('h_zone',$('#h_zone').value);
-    await setDoc(doc(db,'helperStates',uid),{ zone:$('#h_zone').value, updatedAt:serverTimestamp() },{merge:true});
+    await setDoc(doc(db,'helperStates',uid),{ zone:$('$h_zone').value, updatedAt:serverTimestamp() },{merge:true});
     subscribeHelperInbox();
   };
   $('#h_pass').onclick=async()=>{
@@ -320,18 +332,47 @@
     $('#h_state').textContent='퀴즈 합격됨 · 수락 가능';
     await setDoc(doc(db,'helperStates',uid),{ passed:true },{merge:true});
   };
+
+  // 수락/거절 처리
   $('#h_inbox').onclick=async e=>{
-    const a=e.target?.getAttribute('data-accept');
-    const r=e.target?.getAttribute('data-reject');
-    if(a){
+    const acceptId=e.target?.getAttribute('data-accept');
+    const rejectId=e.target?.getAttribute('data-reject');
+
+    if(acceptId){
       if(!Store.get('passed')){ alert('퀴즈 합격 필요'); return; }
-      await addDoc(COL_CAND,{ requestId:a, helperId:uid, helperName:Store.get('nickname','도우미'), createdAt:serverTimestamp() });
-      $('#h_tripState').textContent='수락됨 (이동약자 확인 중)';
+
+      try{
+        // 🔒 단 한 명만 수락: 트랜잭션으로 상태 OPEN → ACCEPTED
+        await runTransaction(db, async (tx)=>{
+          const ref = doc(db,'requests',acceptId);
+          const snap = await tx.get(ref);
+          if(!snap.exists()) throw new Error('요청이 존재하지 않습니다');
+          const v = snap.data();
+          if(v.status !== 'OPEN') throw new Error('이미 다른 도우미가 수락했습니다');
+
+          tx.update(ref, {
+            status: 'ACCEPTED',
+            acceptedHelperId: uid,
+            acceptedHelperName: Store.get('nickname','도우미'),
+            acceptedAt: serverTimestamp()
+          });
+        });
+
+        $('#h_tripState').textContent='수락 완료 (이동약자 측에 알림)';
+        // OPEN 구독이므로 수락 직후 리스트에서 자동 제거됨
+      }catch(err){
+        alert(err.message || '수락 중 오류');
+      }
     }
-    if(r){ alert('거절 처리(데모)'); }
+
+    if(rejectId){
+      // 이 도우미만 숨기기
+      await updateDoc(doc(db,'requests',rejectId), { rejectedBy: arrayUnion(uid) });
+      // 로컬 즉시 반영은 onSnapshot에 의해 자동 처리됨(다음 스냅샷에서 필터됨)
+    }
   };
 
-  /* 부팅: 항상 로그인부터 시작 */
+  /* 부팅 */
   goto('#scr-login');
 </script>
 </body>
