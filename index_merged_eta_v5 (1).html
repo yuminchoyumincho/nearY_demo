@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>nearY</title>
+
+  <style>
+    :root{ --navy:#183857; --bg:#f6f8fb; --card:#fff; --sub:#64748b; --pill:#e9eff7; }
+    *{ box-sizing:border-box; font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif }
+    body{ margin:0; background:var(--bg); color:#0f172a }
+    header{ padding:14px 16px; background:var(--navy); color:#fff; display:flex; justify-content:space-between; align-items:center }
+    header h1{ font-size:16px; margin:0; font-weight:800 }
+    .container{ padding:16px; max-width:980px; margin:0 auto }
+    .card{ background:var(--card); border-radius:14px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:14px }
+    label{ display:block; font-size:12px; color:var(--sub); margin:10px 0 6px }
+    input, select, textarea{ width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff }
+    textarea{ min-height:84px }
+    .row{ display:flex; gap:12px; flex-wrap:wrap }
+    .row>div{ flex:1; min-width:220px }
+    .btn{ display:inline-flex; justify-content:center; align-items:center; min-width:140px; padding:12px 16px; border-radius:12px; background:var(--navy); color:#fff; border:none; font-weight:800; cursor:pointer }
+    .btn.secondary{ background:#fff; color:#183857; border:1px solid #d1d5db }
+    .btn.small{ min-width:auto; padding:8px 10px; font-weight:700 }
+    .muted{ color:#64748b; font-size:13px }
+    .space{ height:12px }
+    .list{ display:grid; gap:10px }
+    .item{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px }
+    .pill{ display:inline-block; padding:4px 8px; border-radius:999px; background:var(--pill); color:#183857; font-size:12px }
+    .tiny{ font-size:12px }
+    .ok, .warn{ display:block; margin-top:8px; margin-bottom:8px } /* 겹침 방지 */
+    .ok{ background:#ecfdf5; color:#065f46; border:1px solid #34d399; padding:8px; border-radius:8px }
+    .warn{ background:#fff7ed; color:#9a3412; border:1px solid #fcd34d; padding:8px; border-radius:8px }
+    .err{ color:#b91c1c; font-size:12px; margin-top:6px }
+    .hidden{ display:none !important }
+    .segTitle{ font-weight:800; margin:0 0 8px 0 }
+    .inline{ display:inline-block; margin-left:6px }
+    /* 버튼과 섹션이 겹치지 않도록 상하 여백 강화 */
+    .block-btn{ display:block; width:100%; max-width:240px; margin:8px 0 14px; }
+  
+    .eta-grid{ display:grid; gap:10px }
+    .eta-btn{ display:block; width:100%; padding:12px 16px; border-radius:999px; border:1px solid #d1d5db; background:#fff; font-weight:800; cursor:pointer }
+    .eta-btn:hover{ border-color:#94a3b8 }
+    .eta-btn.selected{ background:#e9eff7; border-color:#183857; color:#183857 }
+    .block-btn{ display:block; width:100%; max-width:240px; margin:8px 0 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>nearY</h1>
+</header>
+
+<div class="container">
+
+  <!-- A. 로그인 -->
+  <section id="scr-login" class="card">
+    <h3 class="segTitle">A. 재학생 로그인 (데모)</h3>
+    <label>연세 메일</label>
+    <input id="email" placeholder="you@yonsei.ac.kr" />
+    <button class="btn block-btn" id="btnVerify">로그인</button>
+    <div id="msgLogin" class="tiny"></div>
+  </section>
+
+  <!-- B. 프로필 -->
+  <section id="scr-profile" class="card hidden">
+    <h3 class="segTitle">B. 프로필</h3>
+    <div class="row">
+      <div>
+        <label>이름/닉네임</label>
+        <input id="nickname" placeholder="예: 연대용사" />
+      </div>
+      <div>
+        <label>성별</label>
+        <select id="gender">
+          <option value="F">F</option>
+          <option value="M">M</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn block-btn" id="btnSaveProfile">저장하고 다음</button>
+    <div id="msgProfile" class="tiny"></div>
+  </section>
+
+  <!-- C. 역할 선택 -->
+  <section id="scr-role" class="card hidden">
+    <h3 class="segTitle">C. 역할 선택</h3>
+    <div class="row">
+      <button class="btn" id="chooseRider">이동약자</button>
+      <button class="btn" id="chooseHelper">도우미</button>
+    </div>
+    <div class="space"></div>
+    <div class="muted tiny">선택하면 해당 역할의 다음 페이지로 이동합니다.</div>
+  </section>
+
+  <!-- D1. 이동약자 - 요청 페이지 -->
+  <section id="scr-rider" class="card hidden">
+    <h3 class="segTitle">이동약자 — 도움 요청</h3>
+    <div class="row">
+      <div>
+        <label>출발지 존</label>
+        <select id="r_from"></select>
+      </div>
+      <div>
+        <label>목적지 존</label>
+        <select id="r_to"></select>
+      </div>
+    </div>
+    <label>요청 메모</label>
+    <textarea id="r_memo" placeholder="엘리베이터 선호 등"></textarea>
+    <button class="btn block-btn" id="r_send">요청 보내기</button>
+    <div id="r_msg" class="tiny"></div>
+  </section>
+
+  <!-- D2. 이동약자 - 여정 페이지(수락 후 이동) -->
+  <section id="scr-rider-trip" class="card hidden">
+    <h3 class="segTitle">여정</h3>
+    <div class="tiny muted" id="r_tripState">-</div>
+    <div class="space"></div>
+    <button id="r_start" class="btn block-btn hidden">여정 시작</button>
+    <button id="r_done"  class="btn secondary block-btn hidden">도착 완료</button>
+  </section>
+
+  <!-- D3. 이동약자 - 리뷰 페이지(도착 후 이동) -->
+  <section id="scr-review" class="card hidden">
+    <h3 class="segTitle">리뷰</h3>
+    <div class="tiny muted" id="review_info">-</div>
+    <div class="space"></div>
+    <label>별점</label>
+    <select id="rev_rate">
+      <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+    </select>
+    <label>후기</label>
+    <textarea id="rev_txt" placeholder="도움 받은 점을 적어주세요"></textarea>
+    <button class="btn block-btn" id="rev_submit">리뷰 제출</button>
+    <div id="rev_msg" class="tiny"></div>
+  </section>
+
+  <!-- E1. 도우미 - 인박스 페이지 -->
+  <section id="scr-helper" class="card hidden">
+    <h3 class="segTitle">도우미 — 요청 수신함</h3>
+    <div class="row">
+      <div>
+        <label>내 현재 존</label>
+        <select id="h_zone"></select>
+      </div>
+      <div>
+        <label>교육/퀴즈</label>
+        <div style="display:flex; gap:8px">
+          <button class="btn secondary small" id="h_pass">퀴즈 합격 처리</button>
+          <div id="h_state" class="muted tiny" style="align-self:center">미합격 (수락 불가)</div>
+        </div>
+      </div>
+    </div>
+    <div class="space"></div>
+    <div class="row">
+      <div>
+        <label>표시 옵션</label>
+        <div class="tiny muted">30분 초과 요청 자동 숨김 · 동일 존만 표시</div>
+      </div>
+      <div>
+        <label>디버그 상태</label>
+        <div id="h_err" class="err tiny"></div>
+      </div>
+    </div>
+    <div class="space"></div>
+    <h4 class="segTitle">도착한 요청</h4>
+    <div id="h_inbox" class="list tiny muted">대기 중…</div>
+  </section>
+
+  <!-- E2. 도우미 - 진행 중 여정 페이지 -->
+  <section id="scr-helper-trip" class="card hidden">
+    <h3 class="segTitle">진행 중 여정</h3>
+    <div class="tiny muted" id="h_tripState">-</div>
+    <div class="space"></div>
+    <button class="btn block-btn" id="h_finish" disabled>도착 처리</button>
+    <div class="tiny muted">* 이동약자가 시작을 누르면 활성화됩니다.</div>
+  </section>
+
+
+  <!-- Rider ETA confirm page (NEW) -->
+  <section id="scr-rider-eta" class="card hidden">
+    <h3 class="segTitle">도우미가 매칭되었습니다!</h3>
+    <div class="tiny muted" id="r_eta_txt">-</div>
+    <div class="space"></div>
+    <button id="r_eta_ok" class="btn block-btn">확인</button>
+  </section>
+
+  <!-- Rider pre-start page (NEW) -->
+  <section id="scr-rider-prestart" class="card hidden">
+    <h3 class="segTitle">대기 중</h3>
+    <div class="tiny muted" id="r_pre_txt">-</div>
+    <div class="space"></div>
+    <button id="r_pre_start" class="btn block-btn">동행 시작</button>
+    <button id="r_pre_cancel" class="btn secondary block-btn">매칭 취소</button>
+  </section>
+
+  <!-- Rider cancel reason page (NEW) -->
+  <section id="scr-rider-cancel" class="card hidden">
+    <h3 class="segTitle">매칭 끊기를 선택하셨습니다.</h3>
+    <div class="tiny muted">취소 이유를 알려주세요</div>
+    <div class="space"></div>
+    <div class="eta-grid">
+      <button class="eta-btn" data-reason="대기 시간이 너무 김">대기 시간이 너무 김</button>
+      <button class="eta-btn" data-reason="목적지가 바뀜">목적지가 바뀜</button>
+    </div>
+    <div class="space"></div>
+    <label>(기타) 직접 입력</label>
+    <input id="r_cancel_other" placeholder="기타 사유를 입력하세요"/>
+    <div class="space"></div>
+    <button id="r_cancel_submit" class="btn block-btn">취소 제출</button>
+  </section>
+
+  <!-- Helper ETA selection page (NEW) -->
+  <section id="scr-helper-eta" class="card hidden">
+    <h3 class="segTitle">도착 예정 시간을 알려주세요!</h3>
+    <div class="eta-grid">
+      <button class="eta-btn" data-eta="0-5">5분 이내</button>
+      <button class="eta-btn" data-eta="5-10">5분 - 10분</button>
+      <button class="eta-btn" data-eta="10-15">10분 - 15분</button>
+    </div>
+  </section>
+
+  <!-- Rider cancelled notice (NEW) -->
+  <section id="scr-rider-cancelled" class="card hidden">
+    <h3 class="segTitle">매칭이 취소되었습니다.</h3>
+    <div class="tiny muted" id="r_cancel_info">취소 사유가 표시됩니다.</div>
+    <div class="space"></div>
+    <button class="btn block-btn" id="r_back_to_request">도움 요청으로 돌아가기</button>
+  </section>
+
+  <!-- Helper cancelled notice (NEW) -->
+  <section id="scr-helper-cancelled" class="card hidden">
+    <h3 class="segTitle">매칭이 취소되었습니다.</h3>
+    <div class="tiny muted" id="h_cancel_info">상대가 매칭을 취소했습니다.</div>
+    <div class="space"></div>
+    <button class="btn block-btn" id="h_back_to_inbox">수신함으로</button>
+  </section>
+
+  <!-- Helper done notice (NEW) -->
+  <section id="scr-helper-done" class="card hidden">
+    <h3 class="segTitle">동행이 완료되었습니다! 수고하셨습니다.</h3>
+    <div class="space"></div>
+    <button class="btn block-btn" id="h_done_back">수신함으로</button>
+  </section>
+</div>
+
+<!-- Firebase (CDN) -->
+<script type="module">
+  /***********************
+   * Firebase
+   ***********************/
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, doc, onSnapshot,
+    query, where, updateDoc, serverTimestamp, setDoc,
+    runTransaction, arrayUnion, increment
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAq1ICIJgBPCXb6huCqKnJRYrM8bvYr3jM",
+    authDomain: "neary-demo-3b3c6.firebaseapp.com",
+    projectId: "neary-demo-3b3c6",
+    storageBucket: "neary-demo-3b3c6.firebasestorage.app",
+    messagingSenderId: "294237201199",
+    appId: "1:294237201199:web:18d15eda48ba0aff2277da"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  /***********************
+   * DOM & NAV
+   ***********************/
+  const $ = s => document.querySelector(s);
+  const show = id => $(id).classList.remove('hidden');
+  const hide = id => $(id).classList.add('hidden');
+  function goto(scrId){
+    ['#scr-login','#scr-profile','#scr-role',
+     '#scr-rider','#scr-rider-trip','#scr-review',
+     '#scr-rider-eta','#scr-rider-prestart','#scr-rider-cancel','#scr-rider-cancelled',
+     '#scr-helper','#scr-helper-trip','#scr-helper-eta','#scr-helper-cancelled','#scr-helper-done'
+    ].forEach(id=>hide(id));
+    show(scrId);
+    // 페이지 전환 시 메시지 박스가 다음 요소와 겹치지 않도록 스크롤 보정
+    window.scrollTo({top:0, behavior:'instant'});
+  }
+
+  /***********************
+   * 존 & 셀렉트
+   ***********************/
+  const ZONES = ["공학원","제1공학관","제2공학관","제3공학관","제4공학관","스포츠과학관","체육관","체육교육관","IBS관","과학원","과학관","연세 삼성학술정보관","중앙도서관","백양누리","백주년기녀관","학생회관","음악관","백양관","윤동주기념관","경영관","노천극장","외솔관","교육과학관","언더우드관","성암관","연희관","위당관","빌링슬리관","대우관","대우관 별관","알렌관","음악대학","새천년관","언어연구 교육원"];
+  const isNear = (a,b)=> a===b; // 데모 안정성 위해 동일 존만 허용
+
+  function fillSelects(){
+    const toOpt = arr => arr.map(z=>`<option value="${z}">${z}</option>`).join('');
+    $('#r_from').innerHTML = toOpt(ZONES);
+    $('#r_to').innerHTML   = toOpt(ZONES);
+    $('#h_zone').innerHTML = toOpt(ZONES);
+  }
+  fillSelects();
+
+  /***********************
+   * 세션 스토리지
+   ***********************/
+  localStorage.removeItem('nearY'); // 데모: 매 방문 새 세션
+  const Store = {
+    g(){ return JSON.parse(localStorage.getItem('nearY')||'{}'); },
+    s(o){ localStorage.setItem('nearY', JSON.stringify(o)); },
+    set(k,v){ const o=this.g(); o[k]=v; this.s(o); },
+    get(k,d=null){ const o=this.g(); return k in o? o[k]:d; }
+  };
+  const uid = Math.random().toString(36).slice(2)+Date.now().toString(36);
+  Store.set('uid', uid);
+
+  /***********************
+   * Firestore 핸들
+   ***********************/
+  const COL_REQ  = collection(db,'requests');        // 요청
+  const COL_HELP = collection(db,'helperStates');    // 도우미 상태(옵션)
+  const COL_VOL  = collection(db,'volunteers');      // 봉사시간 {email, hours, quizGranted}
+
+  /***********************
+   * A. 로그인
+   ***********************/
+  $('#btnVerify').onclick = ()=>{
+    const email = $('#email').value.trim();
+    if(!/@yonsei\.ac\.kr$/.test(email)){
+      $('#msgLogin').innerHTML = `<span class="warn">연세 메일 형식이 아닙니다.</span>`;
+      return;
+    }
+    Store.set('email', email);
+    $('#msgLogin').innerHTML = `<span class="ok">로그인 성공</span>`;
+    setTimeout(()=>goto('#scr-profile'), 250);
+  };
+
+  /***********************
+   * B. 프로필
+   ***********************/
+  $('#btnSaveProfile').onclick = ()=>{
+    const n = $('#nickname').value.trim();
+    const g = $('#gender').value;
+    if(!n){
+      $('#msgProfile').innerHTML = `<span class="warn">닉네임을 입력하세요.</span>`;
+      return;
+    }
+    Store.set('nickname', n);
+    Store.set('gender', g);
+    $('#msgProfile').innerHTML = `<span class="ok">저장완료</span>`;
+    setTimeout(()=>goto('#scr-role'), 250);
+  };
+
+  /***********************
+   * C. 역할 선택
+   ***********************/
+  $('#chooseRider').onclick = ()=>{ Store.set('role','rider'); startRider();  goto('#scr-rider'); };
+  $('#chooseHelper').onclick = ()=>{ Store.set('role','helper'); startHelper(); goto('#scr-helper'); };
+
+  /***********************
+   * D. 이동약자
+   ***********************/
+  let riderReqId = null;
+  function startRider(){
+    const existing = Store.get('currentReq', null);
+    if(existing) listenRider(existing);
+
+    $('#r_send').onclick = async ()=>{
+      const from = $('#r_from').value;
+      const to   = $('#r_to').value;
+      const memo = $('#r_memo').value.trim();
+
+      const ref = await addDoc(COL_REQ, {
+        riderId: uid,
+        riderName: Store.get('nickname','익명'),
+        riderGender: Store.get('gender','F'),
+        riderEmail: Store.get('email'),
+        from, to, memo,
+        status: 'OPEN',
+        rejectedBy: [],
+        createdAt: serverTimestamp()
+      });
+
+      Store.set('currentReq', ref.id);
+      $('#r_msg').innerHTML = `<span class="ok">요청 전송됨</span>`;
+      // 수락되면 다음 페이지로 넘어가도록 리스너 장착
+      listenRider(ref.id);
+    };
+  }
+
+  
+  // Rider extra buttons (ETA 확인/대기/취소)
+  document.querySelector('#r_eta_ok').onclick = ()=>{ goto('#scr-rider-prestart'); };
+  document.querySelector('#r_pre_start').onclick = async ()=>{
+    const reqId = Store.get('currentReq'); if(!reqId) return;
+    try{ await updateDoc(doc(db,'requests', reqId), { status:'IN_PROGRESS', startedAt:serverTimestamp() }); }
+    catch(e){ alert('시작 처리 오류: '+(e?.message||e)); }
+  };
+  document.querySelector('#r_pre_cancel').onclick = ()=>{ goto('#scr-rider-cancel'); };
+
+  // 취소 사유 버튼 선택 저장
+  let __selectedCancel = '';
+  document.querySelector('#scr-rider-cancel').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-reason]');
+    if(!btn) return;
+    __selectedCancel = btn.getAttribute('data-reason');
+    // toggle visual
+    document.querySelectorAll('#scr-rider-cancel .eta-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+  document.querySelector('#r_cancel_submit').onclick = async ()=>{
+    const reqId = Store.get('currentReq'); if(!reqId) return;
+    const other = document.querySelector('#r_cancel_other').value.trim();
+    const reason = other || __selectedCancel || '기타';
+    try{ await updateDoc(doc(db,'requests', reqId), { status:'CANCELLED_BY_RIDER', cancelReason: reason, cancelledAt: serverTimestamp() });
+      document.querySelector('#r_cancel_info').textContent = `이유: ${reason}`;
+      goto('#scr-rider-cancelled');
+    }
+    catch(e){ alert('취소 처리 오류: '+(e?.message||e)); }
+  };
+
+function listenRider(reqId){
+    riderReqId = reqId;
+    const ref = doc(db,'requests', reqId);
+
+    // 버튼 바인딩
+    const startBtn = $('#r_start');
+    const doneBtn  = $('#r_done');
+    startBtn.onclick = async ()=>{
+      try{
+        await updateDoc(ref, { status:'IN_PROGRESS', startedAt:serverTimestamp() });
+      }catch(e){ alert('시작 처리 오류: '+(e?.message||e)); }
+    };
+    doneBtn.onclick = async ()=>{
+      try{
+        await updateDoc(ref, { status:'DONE', finishedAt:serverTimestamp() });
+      }catch(e){ alert('도착 처리 오류: '+(e?.message||e)); }
+    };
+
+    onSnapshot(ref, snap=>{
+      if(!snap.exists()) return;
+      const v = snap.data();
+
+      if(v.status==='OPEN'){
+        // 아직 수락 전: 페이지 유지
+      }else if(v.status==='ACCEPTED'){
+        // 수락되면 ETA 안내 → 확인 → 대기 페이지 순서로 진행
+        const etaLabel = v.etaLabel || '잠시 후';
+        $('#r_eta_txt').textContent = `도우미가 ${etaLabel} 후에 도착할 예정입니다. 도착 장소에서 대기해주세요.`;
+        $('#r_pre_txt').textContent = `도우미가 ${etaLabel} 후 도착 예정입니다. 현장에서 만나면 '동행 시작'을 눌러주세요.`;
+        goto('#scr-rider-eta');
+      }else if(v.status==='IN_PROGRESS'){
+        goto('#scr-rider-trip');
+        $('#r_tripState').textContent = '이동 중…';
+        $('#r_start').classList.add('hidden');
+        $('#r_done').classList.remove('hidden');
+      }else if(v.status==='CANCELLED_BY_RIDER'){
+        goto('#scr-rider-cancelled');
+        $('#h_cancel_info').textContent = `이유: ${v.cancelReason || '상대가 매칭을 취소했습니다.'}`;
+        $('#h_finish').disabled = true;
+      }else if(v.status==='CANCELLED_BY_RIDER'){
+        // 취소되면 취소 안내 페이지로 이동 (사유 포함)
+        goto('#scr-rider-cancelled');
+        document.querySelector('#r_cancel_info').textContent = `이유: ${v.cancelReason || '사용자 취소'}`;
+      }else if(v.status==='DONE'){
+        // 도착 → 리뷰 페이지로 이동, 봉사시간 적립 처리
+        goto('#scr-review');
+        const s = v.startedAt?.toMillis?.() || Date.now();
+        const f = v.finishedAt?.toMillis?.() || Date.now();
+        const hours = Math.max(0, (f - s) / 3600000);
+        const rounded = Math.round(hours * 2) / 2; // 0.5시간 단위 반올림
+        $('#review_info').textContent = `총 이동 시간: 약 ${rounded}시간`;
+        // 봉사시간 적립 (도우미 이메일이 저장되어 있어야 함)
+        if(v.acceptedHelperEmail){
+          const volRef = doc(db,'volunteers', v.acceptedHelperEmail);
+          // 원자적 증가
+          updateDoc(volRef, { hours: increment(rounded) })
+            .catch(async ()=>{
+              // 문서가 없을 수 있으니 생성
+              await setDoc(volRef, { email:v.acceptedHelperEmail, hours: rounded, quizGranted:false }, { merge:true });
+            });
+        }
+      }
+    });
+  }
+
+  // 리뷰 제출(선택 페이지)
+  $('#rev_submit').onclick = async ()=>{
+    const reqId = Store.get('currentReq');
+    if(!reqId) return;
+    const ref = doc(db,'requests', reqId);
+    await updateDoc(ref, {
+      review: {
+        rate: Number($('#rev_rate').value),
+        text: $('#rev_txt').value.trim(),
+        at: serverTimestamp()
+      }
+    });
+    $('#rev_msg').innerHTML = `<span class="ok">리뷰가 제출되었습니다. 감사합니다!</span>`;
+  };
+
+  /***********************
+   * E. 도우미
+   ***********************/
+  let helperUnsub = null;
+  let helperTripUnsub = null;
+  let acceptedReqId = null;
+
+  function startHelper(){
+    setDoc(doc(COL_HELP, uid),{
+      uid,
+      email: Store.get('email'),
+      nickname: Store.get('nickname'),
+      gender: Store.get('gender'),
+      zone: $('#h_zone').value || ZONES[0],
+      passed: false,
+      updatedAt: serverTimestamp()
+    },{ merge:true });
+
+    // 퀴즈 합격 → 기본 2시간 1회 지급
+    $('#h_pass').onclick = async ()=>{
+      const email = Store.get('email');
+      $('#h_state').textContent = '퀴즈 합격됨 · 수락 가능';
+      await setDoc(doc(COL_HELP, uid),{ passed:true },{ merge:true });
+
+      const vref = doc(db,'volunteers', email);
+      await runTransaction(db, async (tx)=>{
+        const s = await tx.get(vref);
+        if(!s.exists()){
+          tx.set(vref, { email, hours: 2, quizGranted: true });
+        }else{
+          const data = s.data();
+          if(!data.quizGranted){
+            tx.update(vref, { hours: (data.hours||0) + 2, quizGranted: true });
+          }
+        }
+      });
+
+      subscribeHelperInbox(); // 인박스 업데이트
+    };
+
+    $('#h_zone').onchange = async ()=>{
+      await setDoc(doc(COL_HELP, uid),{ zone:$('#h_zone').value, updatedAt:serverTimestamp() },{ merge:true });
+      subscribeHelperInbox();
+    };
+
+    // 도우미 진행중 페이지의 ‘도착처리’ 버튼
+    $('#h_finish').onclick = async ()=>{
+      if(!acceptedReqId) return;
+      try{
+        await updateDoc(doc(db,'requests', acceptedReqId), { status:'DONE', finishedAt:serverTimestamp() });
+      }catch(e){ alert('도착 처리 오류: '+(e?.message||e)); }
+    };
+
+    document.querySelector('#h_back_to_inbox')?.addEventListener('click', ()=>{ goto('#scr-helper'); subscribeHelperInbox(); });
+    subscribeHelperInbox();
+  }
+
+  function subscribeHelperInbox(){
+    const inbox = $('#h_inbox');
+    const errBox= $('#h_err');
+    errBox.textContent='';
+
+    if(helperUnsub) helperUnsub();
+    const qOpen = query(COL_REQ, where('status','==','OPEN'));
+
+    helperUnsub = onSnapshot(
+      qOpen,
+      (snap)=>{
+        const zone = $('#h_zone').value || ZONES[0];
+        let out = '';
+        const now = Date.now();
+
+        snap.forEach(d=>{
+          const v = d.data();
+
+          if(Array.isArray(v.rejectedBy) && v.rejectedBy.includes(uid)) return;
+          if(!isNear(zone, v.from)) return;
+          if(!v.createdAt) return;
+          const ageMin = (now - v.createdAt.toMillis())/60000;
+          if(ageMin > 30) return;
+
+          const mins = Math.max(0, Math.floor(ageMin));
+          const timeTxt = mins<1 ? '방금' : `${mins}분 전`;
+
+          const canAccept = ($('#h_state').textContent||'').includes('합격');
+          const riderName = v.riderName || '익명';
+
+          out += `
+            <div class="item">
+              <div><b>${riderName}</b> 님의 요청 <span class="pill inline">${timeTxt}</span></div>
+              <div class="space"></div>
+              <div><span class="pill">${v.from||'-'}</span> → <b>${v.to||'-'}</b></div>
+              <div class="space"></div>
+              <div class="muted tiny">${v.memo || '-'}</div>
+              <div class="space"></div>
+              <div style="display:flex; gap:8px">
+                ${canAccept
+                  ? `<button class="btn small" data-accept="${d.id}">수락</button>`
+                  : `<button class="btn small" disabled>수락(퀴즈 필요)</button>`
+                }
+                <button class="btn secondary small" data-reject="${d.id}">거절</button>
+              </div>
+            </div>
+          `;
+        });
+
+        inbox.innerHTML = out || '표시할 요청 없음';
+      },
+      (error)=>{
+        errBox.textContent = '구독 에러: ' + error.message;
+        inbox.innerHTML = '표시할 요청 없음';
+      }
+    );
+
+    // 수락/거절 위임
+    inbox.onclick = async (e)=>{
+      const acceptId = e.target?.getAttribute('data-accept');
+      const rejectId = e.target?.getAttribute('data-reject');
+
+      if(acceptId){
+        acceptedReqId = acceptId;
+        // ETA 선택 화면으로 이동 후, 선택 시 트랜잭션 처리
+        goto('#scr-helper-eta');
+        const container = document.querySelector('#scr-helper-eta');
+        const clickOnce = async (e)=>{
+          const choice = e.target?.getAttribute('data-eta'); if(!choice) return;
+          const label = choice==='0-5' ? '5분 이내' : (choice==='5-10' ? '5분-10분' : '10분-15분');
+          container.removeEventListener('click', clickOnce);
+          try{
+            await runTransaction(db, async (tx)=>{
+              const ref = doc(db,'requests', acceptedReqId);
+              const snap = await tx.get(ref);
+              if(!snap.exists()) throw new Error('요청이 존재하지 않습니다.');
+              const v = snap.data();
+              if(v.status !== 'OPEN') throw new Error('이미 다른 도우미가 수락했습니다.');
+              tx.update(ref, {
+                status: 'ACCEPTED',
+                acceptedHelperId: uid,
+                acceptedHelperName: Store.get('nickname','도우미'),
+                acceptedHelperEmail: Store.get('email'),
+                acceptedAt: serverTimestamp(),
+                etaChoice: choice,
+                etaLabel: label
+              });
+            });
+            goto('#scr-helper-trip');
+            listenHelperTrip(acceptedReqId);
+          }catch(err){ alert(err.message || '수락/ETA 설정 오류'); }
+        };
+        container.addEventListener('click', clickOnce);
+      }
+
+      if(rejectId){
+        await updateDoc(doc(db,'requests', rejectId), { rejectedBy: arrayUnion(uid) });
+      }
+    };
+  }
+
+  function listenHelperTrip(reqId){
+    if(helperTripUnsub) { helperTripUnsub(); helperTripUnsub=null; }
+    const ref = doc(db,'requests', reqId);
+    helperTripUnsub = onSnapshot(ref, snap=>{
+      if(!snap.exists()) return;
+      const v = snap.data();
+      const el = $('#h_tripState');
+      if(v.status==='ACCEPTED'){
+        el.textContent = '이동약자 시작 대기 중';
+        $('#h_finish').disabled = true;
+      }else if(v.status==='IN_PROGRESS'){
+        el.textContent = '이동 중…';
+        $('#h_finish').disabled = false; // 도우미도 도착 처리 가능
+      }else if(v.status==='CANCELLED_BY_RIDER'){
+        goto('#scr-helper-cancelled');
+        $('#h_cancel_info').textContent = `이유: ${v.cancelReason || '상대가 매칭을 취소했습니다.'}`;
+        $('#h_finish').disabled = true;
+      }else if(v.status==='DONE'){
+        goto('#scr-helper-done');
+        el.textContent = '도착 완료';
+        $('#h_finish').disabled = true;
+      }else{
+        el.textContent = v.status || '-';
+        $('#h_finish').disabled = true;
+      }
+    }, (err)=>{
+      const e = $('#h_err'); if(e) e.textContent = '여정 구독 에러: ' + err.message;
+    });
+  }
+
+  /***********************
+   * 부팅
+   ***********************/
+  goto('#scr-login');
+  document.querySelector('#h_done_back')?.addEventListener('click', ()=>{ goto('#scr-helper'); });
+  document.querySelector('#r_back_to_request')?.addEventListener('click', ()=>{ goto('#scr-rider'); });
+  document.querySelector('#h_back_to_inbox')?.addEventListener('click', ()=>{ goto('#scr-helper'); });
+</script>
+
+</body>
+</html>
